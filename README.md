@@ -33,10 +33,10 @@ This Patient Chat Application is a Django-based web chatbot designed to facilita
   - `manage.py`: Django's command-line utility for administrative tasks.
   - `requirements.txt`: Lists all Python dependencies for the project.
 
-- **[Clone the repository](https://github.com/joshuagrundmeyer0710/PatientChatApp.git)**
+- **[Clone the repository](https://github.com/grapepicker1016/PatientChatApp.git)**
 
   ```bash
-  git clone https://github.com/yourusername/PatientChatApp.git
+  git clone https://github.com/grapepicker1016/PatientChatApp.git
   ```
 
 - **Python Environment Setup**
