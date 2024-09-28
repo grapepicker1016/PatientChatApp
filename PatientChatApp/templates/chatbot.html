@@ -1,0 +1,218 @@
+{% extends 'base.html' %} {% block styles %}
+<style>
+  body,
+  html {
+    height: 100%;
+    margin: 0;
+  }
+
+  .chat-container {
+    display: flex;
+    height: calc(
+      100vh - 60px
+    ); /* Adjust height to account for the message form */
+    flex-direction: row;
+  }
+
+  .messages-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background-color: #f1f1f1;
+  }
+
+  .message {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .message.sent {
+    background-color: #e0f7fa;
+    align-self: flex-end;
+  }
+
+  .message.received {
+    background-color: #fff;
+    align-self: flex-start;
+  }
+
+  .reservation-box {
+    width: 300px; /* Update the width to your desired value */
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-left: 1px solid #ccc;
+    overflow-y: auto;
+}
+
+
+  .reservation-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .message-form {
+    display: flex;
+    padding: 10px;
+    background-color: #f8f9fa;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0; /* Extend to the right to cover the entire width */
+  }
+
+  .message-input {
+    flex: 1;
+    border-radius: 0;
+    border-right: none;
+  }
+
+  .btn-send {
+    border-radius: 0;
+  }
+
+  .card-header {
+    position: sticky;
+    top: 0;
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+    z-index: 10;
+  }
+  .flex-1 {
+    flex: 1;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="chat-container">
+  <div class="card flex-1">
+    <div class="card-header">Chat</div>
+    {% if user.is_authenticated %}
+    <div class="card-header">
+      <b>Welcome, {{user.username}}</b>
+      <a style="color: yellow" href="logout">Logout</a>
+    </div>
+    {% else %}
+    <div class="card-header">
+      <a style="color: yellow" href="login">Login</a>
+      <a style="color: yellow" href="register">Register</a>
+    </div>
+    {% endif %}
+    <div class="card-body messages-box">
+      <ul class="list-unstyled messages-list">
+        {% for chat in chats %} {% if chat.user == request.user %}
+        <li class="message sent">
+          <div class="message-text">
+            <div class="message-sender">
+              <b>You</b>
+            </div>
+            <div class="message-content">{{chat.message}}</div>
+          </div>
+        </li>
+        <li class="message received">
+          <div class="message-text">
+            <div class="message-sender">
+              <b>AI Chatbot</b>
+            </div>
+            <div class="message-content">{{chat.response|safe}}</div>
+          </div>
+        </li>
+        {% endif %} {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="reservation-box">
+    <h5>Reservation Change Requests</h5>
+    {% for reservation in reservations %}
+    <div class="reservation-item">
+      <p>
+        <strong>Request:</strong><br />
+        <br />
+        <strong>At:</strong><br />{{reservation.created_at}}
+        <br />
+        <br />
+        <strong>Content:</strong><br />{{ reservation.content }}
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<form class="message-form">
+  {% csrf_token %}
+  <div class="input-group">
+    <input
+      type="text"
+      class="form-control message-input"
+      placeholder="Type your message..."
+    />
+    <div class="input-group-append">
+      <button type="submit" class="btn btn-primary btn-send">Send</button>
+    </div>
+  </div>
+</form>
+
+<script>
+  const messagesList = document.querySelector(".messages-list");
+  const messageForm = document.querySelector(".message-form");
+  const messageInput = document.querySelector(".message-input");
+
+  messageForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const message = messageInput.value.trim();
+    if (message.length === 0) {
+      return;
+    }
+
+    const messageItem = document.createElement("li");
+    messageItem.classList.add("message", "sent");
+    messageItem.innerHTML = `
+        <div class="message-text">
+            <div class="message-sender">
+                <b>You</b>
+            </div>
+            <div class="message-content">
+                ${message}
+            </div>
+        </div>`;
+    messagesList.appendChild(messageItem);
+
+    messageInput.value = "";
+
+    fetch("", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        csrfmiddlewaretoken: document.querySelector(
+          "[name=csrfmiddlewaretoken]"
+        ).value,
+        message: message,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        const response = data.response;
+        const messageItem = document.createElement("li");
+        messageItem.classList.add("message", "received");
+        messageItem.innerHTML = `
+        <div class="message-text">
+            <div class="message-sender">
+              <b>AI Chatbot</b>
+            </div>
+            <div class="message-content">
+                ${response}
+            </div>
+        </div>
+          `;
+        messagesList.appendChild(messageItem);
+        window.location.reload();
+      });
+  });
+</script>
+{% endblock %}
